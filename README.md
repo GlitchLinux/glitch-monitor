@@ -2,7 +2,7 @@
 
 A lightweight, modern server monitoring dashboard for Linux systems. Built with pure HTML, CSS, and PHP — no frameworks, no bloat, no bullshit.
 
-![Dashboard Preview](screenshots/dashboard.png)
+![Dashboard Preview](screenshots/monitor-dashboard.png)
 
 ## ✨ Features
 
@@ -11,7 +11,7 @@ A lightweight, modern server monitoring dashboard for Linux systems. Built with 
 - **Lightweight** — Under 100KB total
 - **Modern dark theme** — Easy on the eyes, looks professional
 - **Mobile responsive** — Monitor from anywhere
-- **Fail2ban integration** — See attackers in real-time
+- **Fail2ban integration** — See banned IPs and attackers in real-time
 - **SSL certificate tracking** — Never miss an expiry
 - **Status export** — Download comprehensive .txt reports
 
@@ -20,7 +20,7 @@ A lightweight, modern server monitoring dashboard for Linux systems. Built with 
 | Page | Description |
 |------|-------------|
 | `dashboard.html` | System overview — CPU, RAM, disk, network, uptime |
-| `stats.html` | Extended stats — Apache, storage, services, SSL certs |
+| `stats.html` | Extended stats — Security, Apache, storage, services, SSL certs |
 | `fail2ban.html` | Security monitor — Banned IPs, top attackers, jail config |
 | `status-download.php` | Export full server status as timestamped .txt |
 
@@ -32,18 +32,36 @@ cd glitch-monitor
 sudo python3 installer.py
 ```
 
+The installer will:
+- Auto-detect your distro (Debian/Ubuntu, RHEL/Fedora, Arch)
+- Install missing dependencies (Apache, PHP, fail2ban)
+- Ask for your custom server name
+- Optionally deploy to an existing website as `/monitor/`
+- Configure everything automatically
+
 ## 📋 Requirements
 
-- Linux (Debian/Ubuntu tested)
-- Apache2 or Nginx
-- PHP 7.4+ with shell_exec enabled
+- Linux (Debian/Ubuntu, RHEL/Fedora, Arch)
+- Apache2 or Nginx + PHP 7.4+
 - Optional: fail2ban (for security monitoring)
 
 ## 🔒 Security
 
-By default binds to **localhost only**. For remote access:
+By default binds to **localhost:8443 only**. For remote access:
 - Use SSH tunnel: `ssh -L 8443:localhost:8443 user@server`
-- Or configure authentication (see docs)
+- Or deploy to existing website with HTTPS
+
+## 📸 Screenshots
+
+### Dashboard
+![Dashboard](screenshots/monitor-dashboard.png)
+
+### Extended Statistics
+![Statistics](screenshots/statistics.png)
+![Statistics 2](screenshots/statistics2.png)
+
+### Fail2ban Monitor
+![Fail2ban](screenshots/fail2ban.png)
 
 ## 🆚 Comparison
 
@@ -56,7 +74,7 @@ By default binds to **localhost only**. For remote access:
 
 ## 📜 License
 
-MIT License
+MIT License — do whatever you want with it.
 
 ## 🙏 Credits
 
