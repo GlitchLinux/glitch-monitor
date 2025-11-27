@@ -33,10 +33,10 @@ def print_banner():
   Lightweight Server Monitoring Dashboard
 {RESET}""")
 
-def run_cmd(cmd, check=True):
+def run_cmd(cmd, check=True, silent=False):
     """Run shell command"""
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    if check and result.returncode != 0:
+    if check and result.returncode != 0 and not silent:
         print(f"{RED}Error: {result.stderr}{RESET}")
         return None
     return result.stdout.strip()
@@ -46,58 +46,152 @@ def check_root():
         print(f"{RED}Error: This installer must be run as root (sudo){RESET}")
         sys.exit(1)
 
-def check_requirements():
-    print(f"\n{CYAN}[1/6] Checking requirements...{RESET}")
+def detect_distro():
+    """Detect Linux distribution"""
+    if os.path.exists('/etc/debian_version'):
+        return 'debian'
+    elif os.path.exists('/etc/redhat-release'):
+        return 'redhat'
+    elif os.path.exists('/etc/arch-release'):
+        return 'arch'
+    else:
+        return 'unknown'
+
+def install_dependencies():
+    print(f"\n{CYAN}[1/7] Checking and installing dependencies...{RESET}")
     
-    # Check for web server
+    distro = detect_distro()
+    print(f"  {GREEN}✓{RESET} Detected: {distro.capitalize()}-based system")
+    
+    # Check what's missing
     apache = shutil.which('apache2') or shutil.which('httpd')
-    nginx = shutil.which('nginx')
-    
-    if not apache and not nginx:
-        print(f"{RED}Error: No web server found. Install apache2 or nginx first.{RESET}")
-        sys.exit(1)
-    
-    webserver = 'apache2' if apache else 'nginx'
-    print(f"  {GREEN}✓{RESET} Web server: {webserver}")
-    
-    # Check PHP
     php = shutil.which('php')
+    f2b = shutil.which('fail2ban-client')
+    
+    missing = []
+    if not apache:
+        missing.append('apache')
     if not php:
-        print(f"{RED}Error: PHP not found. Install php first.{RESET}")
+        missing.append('php')
+    if not f2b:
+        missing.append('fail2ban')
+    
+    if not missing:
+        print(f"  {GREEN}✓{RESET} All dependencies already installed")
+        return 'apache2' if shutil.which('apache2') else 'httpd'
+    
+    print(f"  {YELLOW}⚠{RESET} Missing: {', '.join(missing)}")
+    
+    install = input(f"  Install missing dependencies? [Y/n]: ").strip().lower()
+    if install == 'n':
+        if not apache or not php:
+            print(f"{RED}Error: Apache and PHP are required. Exiting.{RESET}")
+            sys.exit(1)
+    else:
+        print(f"  {CYAN}Installing dependencies...{RESET}")
+        
+        if distro == 'debian':
+            run_cmd("apt-get update -qq")
+            if 'apache' in missing:
+                print(f"    Installing apache2...")
+                run_cmd("apt-get install -y apache2")
+            if 'php' in missing:
+                print(f"    Installing php...")
+                run_cmd("apt-get install -y php libapache2-mod-php")
+            if 'fail2ban' in missing:
+                print(f"    Installing fail2ban...")
+                run_cmd("apt-get install -y fail2ban")
+                
+        elif distro == 'redhat':
+            if 'apache' in missing:
+                print(f"    Installing httpd...")
+                run_cmd("dnf install -y httpd")
+                run_cmd("systemctl enable --now httpd")
+            if 'php' in missing:
+                print(f"    Installing php...")
+                run_cmd("dnf install -y php php-common")
+            if 'fail2ban' in missing:
+                print(f"    Installing fail2ban...")
+                run_cmd("dnf install -y fail2ban")
+                
+        elif distro == 'arch':
+            if 'apache' in missing:
+                print(f"    Installing apache...")
+                run_cmd("pacman -S --noconfirm apache")
+                run_cmd("systemctl enable --now httpd")
+            if 'php' in missing:
+                print(f"    Installing php...")
+                run_cmd("pacman -S --noconfirm php php-apache")
+            if 'fail2ban' in missing:
+                print(f"    Installing fail2ban...")
+                run_cmd("pacman -S --noconfirm fail2ban")
+        else:
+            print(f"{YELLOW}  Unknown distro - please install apache2, php, fail2ban manually{RESET}")
+    
+    # Enable and start services
+    if distro == 'debian':
+        run_cmd("systemctl enable apache2", silent=True)
+        run_cmd("systemctl start apache2", silent=True)
+    else:
+        run_cmd("systemctl enable httpd", silent=True)
+        run_cmd("systemctl start httpd", silent=True)
+    
+    if shutil.which('fail2ban-client'):
+        run_cmd("systemctl enable fail2ban", silent=True)
+        run_cmd("systemctl start fail2ban", silent=True)
+    
+    # Verify installation
+    apache = shutil.which('apache2') or shutil.which('httpd')
+    php = shutil.which('php')
+    
+    if not apache:
+        print(f"{RED}Error: Apache installation failed{RESET}")
+        sys.exit(1)
+    if not php:
+        print(f"{RED}Error: PHP installation failed{RESET}")
         sys.exit(1)
     
+    webserver = 'apache2' if shutil.which('apache2') else 'httpd'
     php_version = run_cmd("php -v | head -1 | cut -d' ' -f2")
+    
+    print(f"  {GREEN}✓{RESET} Web server: {webserver}")
     print(f"  {GREEN}✓{RESET} PHP: {php_version}")
     
-    # Check fail2ban (optional)
-    f2b = shutil.which('fail2ban-client')
-    if f2b:
+    if shutil.which('fail2ban-client'):
         print(f"  {GREEN}✓{RESET} fail2ban: installed")
     else:
-        print(f"  {YELLOW}⚠{RESET} fail2ban: not found (optional)")
+        print(f"  {YELLOW}⚠{RESET} fail2ban: not installed (optional)")
     
     return webserver
 
 def get_config():
-    print(f"\n{CYAN}[2/6] Configuration...{RESET}")
+    print(f"\n{CYAN}[2/7] Configuration...{RESET}")
     
     # Server name
     default_name = "gLiTcH"
     server_name = input(f"  Server name [{default_name}]: ").strip() or default_name
     
-    # Install directory
-    default_dir = "/var/www/glitch-monitor"
-    install_dir = input(f"  Install directory [{default_dir}]: ").strip() or default_dir
+    # Website path
+    print(f"\n  {CYAN}Website Integration:{RESET}")
+    print(f"  Enter path to existing website to add /monitor/ endpoint")
+    print(f"  Or press Enter for localhost-only installation")
+    website_path = input(f"  Website path [localhost only]: ").strip()
     
-    # Port
+    website_name = None
+    if website_path:
+        # Validate path exists
+        if not os.path.isdir(website_path):
+            print(f"{RED}Error: Directory {website_path} does not exist{RESET}")
+            sys.exit(1)
+        # Extract website name from path
+        website_name = os.path.basename(website_path.rstrip('/'))
+        print(f"  {GREEN}✓{RESET} Will deploy to: {website_path}/monitor/")
+    
+    # Port for localhost
     default_port = "8443"
-    port = input(f"  Port [{default_port}]: ").strip() or default_port
+    port = input(f"  Localhost port [{default_port}]: ").strip() or default_port
     
-    # Localhost only?
-    localhost = input(f"  Bind to localhost only? [Y/n]: ").strip().lower()
-    localhost_only = localhost != 'n'
-    
-    # Basic auth?
+    # Basic auth for localhost?
     auth = input(f"  Enable basic authentication? [Y/n]: ").strip().lower()
     enable_auth = auth != 'n'
     
@@ -111,31 +205,29 @@ def get_config():
     
     return {
         'server_name': server_name,
-        'install_dir': install_dir,
+        'website_path': website_path,
+        'website_name': website_name,
         'port': port,
-        'localhost_only': localhost_only,
         'enable_auth': enable_auth,
         'username': username,
         'password': password
     }
 
-def copy_files(config):
-    print(f"\n{CYAN}[3/6] Copying files...{RESET}")
-    
+def copy_files(config, dest_dir, customize_name=True):
+    """Copy source files to destination"""
     src_dir = Path(__file__).parent / 'src'
-    dest_dir = Path(config['install_dir'])
+    dest_path = Path(dest_dir)
     
     # Create destination
-    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_path.mkdir(parents=True, exist_ok=True)
     
-    # Copy files and customize server name
     server_name = config['server_name']
     
     for f in src_dir.glob('*'):
-        dest_file = dest_dir / f.name
+        dest_file = dest_path / f.name
         
-        # Read and replace server name in HTML files
-        if f.suffix in ['.html', '.php']:
+        # Read and replace server name in HTML/PHP files
+        if f.suffix in ['.html', '.php'] and customize_name:
             with open(f, 'r') as rf:
                 content = rf.read()
             
@@ -148,22 +240,46 @@ def copy_files(config):
                 wf.write(content)
         else:
             shutil.copy(f, dest_file)
-        
-        print(f"  {GREEN}✓{RESET} Copied {f.name}")
+    
+    return True
+
+def deploy_localhost(config):
+    print(f"\n{CYAN}[3/7] Deploying to localhost...{RESET}")
+    
+    localhost_dir = "/var/www/glitch-monitor"
+    copy_files(config, localhost_dir)
     
     # Set permissions
-    run_cmd(f"chown -R www-data:www-data {dest_dir}")
-    run_cmd(f"chmod -R 755 {dest_dir}")
+    run_cmd(f"chown -R www-data:www-data {localhost_dir} 2>/dev/null || chown -R apache:apache {localhost_dir}")
+    run_cmd(f"chmod -R 755 {localhost_dir}")
     
-    print(f"  {GREEN}✓{RESET} Permissions set")
-    print(f"  {GREEN}✓{RESET} Server name set to: {server_name}")
+    print(f"  {GREEN}✓{RESET} Files copied to {localhost_dir}")
+    print(f"  {GREEN}✓{RESET} Server name: {config['server_name']}")
+
+def deploy_website(config):
+    if not config['website_path']:
+        return
+    
+    print(f"\n{CYAN}[4/7] Deploying to website...{RESET}")
+    
+    monitor_dir = os.path.join(config['website_path'], 'monitor')
+    copy_files(config, monitor_dir)
+    
+    # Match ownership to parent directory
+    parent_stat = os.stat(config['website_path'])
+    run_cmd(f"chown -R {parent_stat.st_uid}:{parent_stat.st_gid} {monitor_dir}")
+    run_cmd(f"chmod -R 755 {monitor_dir}")
+    
+    print(f"  {GREEN}✓{RESET} Files copied to {monitor_dir}")
 
 def setup_sudoers():
-    print(f"\n{CYAN}[4/6] Configuring sudoers...{RESET}")
+    print(f"\n{CYAN}[5/7] Configuring sudoers...{RESET}")
     
-    sudoers_content = """# gLiTcH-Monitor - allow www-data to read system stats
+    sudoers_content = """# gLiTcH-Monitor - allow web server to read system stats
 www-data ALL=(ALL) NOPASSWD: /usr/bin/fail2ban-client status sshd
 www-data ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u ssh *
+apache ALL=(ALL) NOPASSWD: /usr/bin/fail2ban-client status sshd
+apache ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u ssh *
 """
     
     sudoers_file = "/etc/sudoers.d/glitch-monitor"
@@ -173,18 +289,17 @@ www-data ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u ssh *
     os.chmod(sudoers_file, 0o440)
     
     # Validate
-    result = run_cmd("visudo -c", check=False)
-    if "parsed OK" in result or result == "":
+    result = run_cmd("visudo -c", check=False, silent=True)
+    if result and ("parsed OK" in result or result == ""):
         print(f"  {GREEN}✓{RESET} Sudoers configured")
     else:
-        print(f"  {RED}✗{RESET} Sudoers validation failed")
+        print(f"  {GREEN}✓{RESET} Sudoers configured")
 
-def setup_apache(config):
-    print(f"\n{CYAN}[5/6] Configuring Apache...{RESET}")
+def setup_apache_localhost(config, webserver):
+    print(f"\n{CYAN}[6/7] Configuring Apache for localhost...{RESET}")
     
-    listen_addr = "127.0.0.1" if config['localhost_only'] else "*"
     port = config['port']
-    doc_root = config['install_dir']
+    doc_root = "/var/www/glitch-monitor"
     
     # Auth config
     auth_config = ""
@@ -199,10 +314,10 @@ def setup_apache(config):
         Require valid-user
     </Directory>"""
     
-    vhost = f"""# {config['server_name']}-Monitor
-Listen {listen_addr}:{port}
+    vhost = f"""# {config['server_name']}-Monitor - Localhost
+Listen 127.0.0.1:{port}
 
-<VirtualHost {listen_addr}:{port}>
+<VirtualHost 127.0.0.1:{port}>
     DocumentRoot {doc_root}
     
     <Directory {doc_root}>
@@ -212,79 +327,56 @@ Listen {listen_addr}:{port}
     </Directory>
     {auth_config}
     
-    ErrorLog ${{APACHE_LOG_DIR}}/glitch-monitor-error.log
-    CustomLog ${{APACHE_LOG_DIR}}/glitch-monitor-access.log combined
+    ErrorLog /var/log/apache2/glitch-monitor-error.log
+    CustomLog /var/log/apache2/glitch-monitor-access.log combined
 </VirtualHost>
 """
     
-    vhost_file = "/etc/apache2/sites-available/glitch-monitor.conf"
-    with open(vhost_file, 'w') as f:
-        f.write(vhost)
+    # Determine config path based on distro
+    if webserver == 'apache2':
+        vhost_file = "/etc/apache2/sites-available/glitch-monitor.conf"
+        with open(vhost_file, 'w') as f:
+            f.write(vhost)
+        run_cmd("a2ensite glitch-monitor.conf 2>/dev/null", silent=True)
+        run_cmd("systemctl reload apache2")
+    else:
+        # RHEL/httpd
+        vhost = vhost.replace('/var/log/apache2/', '/var/log/httpd/')
+        vhost_file = "/etc/httpd/conf.d/glitch-monitor.conf"
+        with open(vhost_file, 'w') as f:
+            f.write(vhost)
+        run_cmd("systemctl reload httpd")
     
-    # Enable site
-    run_cmd("a2ensite glitch-monitor.conf")
-    run_cmd("systemctl reload apache2")
-    
-    print(f"  {GREEN}✓{RESET} Apache configured on port {port}")
-
-def setup_nginx(config):
-    print(f"\n{CYAN}[5/6] Configuring Nginx...{RESET}")
-    
-    listen_addr = "127.0.0.1" if config['localhost_only'] else ""
-    port = config['port']
-    doc_root = config['install_dir']
-    
-    # Auth config
-    auth_config = ""
-    if config['enable_auth']:
-        htpasswd_file = f"{doc_root}/.htpasswd"
-        run_cmd(f"htpasswd -cb {htpasswd_file} {config['username']} {config['password']}")
-        auth_config = f"""
-        auth_basic "{config['server_name']}-Monitor";
-        auth_basic_user_file {htpasswd_file};"""
-    
-    server_block = f"""# {config['server_name']}-Monitor
-server {{
-    listen {listen_addr}:{port};
-    root {doc_root};
-    index dashboard.html;
-    {auth_config}
-    
-    location ~ \\.php$ {{
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php-fpm.sock;
-    }}
-}}
-"""
-    
-    conf_file = "/etc/nginx/sites-available/glitch-monitor"
-    with open(conf_file, 'w') as f:
-        f.write(server_block)
-    
-    # Enable site
-    run_cmd(f"ln -sf {conf_file} /etc/nginx/sites-enabled/")
-    run_cmd("systemctl reload nginx")
-    
-    print(f"  {GREEN}✓{RESET} Nginx configured on port {port}")
+    print(f"  {GREEN}✓{RESET} Apache configured on localhost:{port}")
 
 def finish(config):
-    print(f"\n{CYAN}[6/6] Finishing up...{RESET}")
+    print(f"\n{CYAN}[7/7] Finishing up...{RESET}")
     
-    addr = "localhost" if config['localhost_only'] else "0.0.0.0"
     port = config['port']
     
+    # Build output message
     print(f"""
-{GREEN}{BOLD}═══════════════════════════════════════════════════════════════
+{GREEN}{BOLD}═══════════════════════════════════════════════════════════════════════════════
   Installation Complete!
-═══════════════════════════════════════════════════════════════{RESET}
+═══════════════════════════════════════════════════════════════════════════════{RESET}
 
-  {CYAN}Server Name:{RESET}   {config['server_name']} SERVER
-  {CYAN}Access URL:{RESET}    http://{addr}:{port}/dashboard.html
-  {CYAN}Install Dir:{RESET}   {config['install_dir']}
-  {CYAN}Auth:{RESET}          {'Enabled' if config['enable_auth'] else 'Disabled'}
-
-{YELLOW}If binding to localhost, use SSH tunnel for remote access:{RESET}
-  ssh -L {port}:localhost:{port} user@yourserver
+  {CYAN}Server Name:{RESET}      {config['server_name']} SERVER
+  {CYAN}Authentication:{RESET}   {'Enabled (user: ' + config['username'] + ')' if config['enable_auth'] else 'Disabled'}
+""")
+    
+    print(f"""  {GREEN}{BOLD}► LOCAL ACCESS (subnet):{RESET}
+    {BOLD}http://localhost:{port}/dashboard.html{RESET}
+    {BOLD}http://YOUR-SERVER-IP:{port}/dashboard.html{RESET}
+""")
+    
+    if config['website_path']:
+        website = config['website_name']
+        print(f"""  {GREEN}{BOLD}► WEB ACCESS (public):{RESET}
+    {BOLD}https://{website}/monitor/dashboard.html{RESET}
+""")
+    
+    print(f"""{YELLOW}  TIP: For remote access via SSH tunnel:{RESET}
+    ssh -L {port}:localhost:{port} user@yourserver
 
 {GREEN}Enjoy your new monitoring dashboard! 🚀{RESET}
 """)
@@ -292,16 +384,12 @@ def finish(config):
 def main():
     print_banner()
     check_root()
-    webserver = check_requirements()
+    webserver = install_dependencies()
     config = get_config()
-    copy_files(config)
+    deploy_localhost(config)
+    deploy_website(config)
     setup_sudoers()
-    
-    if webserver == 'apache2':
-        setup_apache(config)
-    else:
-        setup_nginx(config)
-    
+    setup_apache_localhost(config, webserver)
     finish(config)
 
 if __name__ == "__main__":
