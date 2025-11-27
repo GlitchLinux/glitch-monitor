@@ -80,6 +80,4 @@ MIT License — do whatever you want with it.
 
 Built by [GLITCH LINUX](https://glitchlinux.com) 
 
----
-
-*"Because watching htop in a terminal gets old."*
+##
