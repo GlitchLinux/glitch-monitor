@@ -102,7 +102,6 @@ function getStorageDetails() {
     // Directory sizes
     $wwwSize = execCommand("du -sh /var/www 2>/dev/null | awk '{print $1}'");
     $logSize = execCommand("du -sh /var/log 2>/dev/null | awk '{print $1}'");
-    $claudeLogSize = execCommand("du -sh /CLAUDE-LOG 2>/dev/null | awk '{print $1}'");
     
     // Largest files
     $largestFiles = execCommand("find /var/www -type f -size +50M -exec ls -lh {} \; 2>/dev/null | awk '{print $5,$9}' | head -5");
@@ -112,7 +111,6 @@ function getStorageDetails() {
         'inode_usage' => $inodes,
         'www_size' => $wwwSize ?: 'N/A',
         'log_size' => $logSize ?: 'N/A',
-        'claude_log_size' => $claudeLogSize ?: 'N/A',
         'largest_files' => $largestFiles
     ];
 }
@@ -220,18 +218,6 @@ function getAlerts() {
     return $alerts;
 }
 
-// Clogger stats
-function getCloggerStats() {
-    $totalEntries = execCommand("wc -l < /CLAUDE-LOG/clogger.log 2>/dev/null");
-    $todayEntries = execCommand("grep '".date('d-m-Y')."' /CLAUDE-LOG/clogger.log 2>/dev/null | wc -l");
-    $lastEntry = execCommand("tail -1 /CLAUDE-LOG/clogger.log 2>/dev/null");
-    
-    return [
-        'total' => (int)$totalEntries,
-        'today' => (int)$todayEntries,
-        'last_entry' => $lastEntry
-    ];
-}
 
 
 // Fail2ban detailed stats
@@ -287,7 +273,6 @@ $stats = [
     'ssl' => getSSLStatus(),
     'response_times' => getSiteResponseTimes(),
     'alerts' => getAlerts(),
-    'clogger' => getCloggerStats(),
     'fail2ban' => getFail2banStats(),
     'timestamp' => time(),
     'generated' => date('Y-m-d H:i:s')

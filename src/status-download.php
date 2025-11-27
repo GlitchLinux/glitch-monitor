@@ -140,17 +140,10 @@ echo "$dash\n\n";
 
 echo "/var/www:        " . execCommand("du -sh /var/www 2>/dev/null | awk '{print \$1}'") . "\n";
 echo "/var/log:        " . execCommand("du -sh /var/log 2>/dev/null | awk '{print \$1}'") . "\n";
-echo "/CLAUDE-LOG:     " . execCommand("du -sh /CLAUDE-LOG 2>/dev/null | awk '{print \$1}'") . "\n";
 
-// CLOGGER
 echo "\n$dash\n";
-echo " CLOGGER AUDIT LOG\n";
 echo "$dash\n\n";
 
-echo "Total Entries:   " . execCommand("wc -l < /CLAUDE-LOG/clogger.log") . "\n";
-echo "Today's Entries: " . execCommand("grep '" . date('d-m-Y') . "' /CLAUDE-LOG/clogger.log | wc -l") . "\n";
-echo "\nLast 5 Entries:\n";
-echo execCommand("tail -5 /CLAUDE-LOG/clogger.log") . "\n";
 
 echo "\n$line\n";
 echo " END OF REPORT\n";

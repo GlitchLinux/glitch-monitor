@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 import shutil
+import re
 from pathlib import Path
 
 # Colors
@@ -80,6 +81,10 @@ def check_requirements():
 def get_config():
     print(f"\n{CYAN}[2/6] Configuration...{RESET}")
     
+    # Server name
+    default_name = "gLiTcH"
+    server_name = input(f"  Server name [{default_name}]: ").strip() or default_name
+    
     # Install directory
     default_dir = "/var/www/glitch-monitor"
     install_dir = input(f"  Install directory [{default_dir}]: ").strip() or default_dir
@@ -105,6 +110,7 @@ def get_config():
             sys.exit(1)
     
     return {
+        'server_name': server_name,
         'install_dir': install_dir,
         'port': port,
         'localhost_only': localhost_only,
@@ -122,9 +128,27 @@ def copy_files(config):
     # Create destination
     dest_dir.mkdir(parents=True, exist_ok=True)
     
-    # Copy files
+    # Copy files and customize server name
+    server_name = config['server_name']
+    
     for f in src_dir.glob('*'):
-        shutil.copy(f, dest_dir)
+        dest_file = dest_dir / f.name
+        
+        # Read and replace server name in HTML files
+        if f.suffix in ['.html', '.php']:
+            with open(f, 'r') as rf:
+                content = rf.read()
+            
+            # Replace gLiTcH SERVER references
+            content = content.replace('gLiTcH SERVER', f'{server_name} SERVER')
+            content = content.replace('gLiTcH-SERVER', f'{server_name}-SERVER')
+            content = content.replace('gLiTcH-Monitor', f'{server_name}-Monitor')
+            
+            with open(dest_file, 'w') as wf:
+                wf.write(content)
+        else:
+            shutil.copy(f, dest_file)
+        
         print(f"  {GREEN}✓{RESET} Copied {f.name}")
     
     # Set permissions
@@ -132,6 +156,7 @@ def copy_files(config):
     run_cmd(f"chmod -R 755 {dest_dir}")
     
     print(f"  {GREEN}✓{RESET} Permissions set")
+    print(f"  {GREEN}✓{RESET} Server name set to: {server_name}")
 
 def setup_sudoers():
     print(f"\n{CYAN}[4/6] Configuring sudoers...{RESET}")
@@ -169,12 +194,12 @@ def setup_apache(config):
         auth_config = f"""
     <Directory {doc_root}>
         AuthType Basic
-        AuthName "gLiTcH-Monitor"
+        AuthName "{config['server_name']}-Monitor"
         AuthUserFile {htpasswd_file}
         Require valid-user
     </Directory>"""
     
-    vhost = f"""# gLiTcH-Monitor
+    vhost = f"""# {config['server_name']}-Monitor
 Listen {listen_addr}:{port}
 
 <VirtualHost {listen_addr}:{port}>
@@ -215,10 +240,10 @@ def setup_nginx(config):
         htpasswd_file = f"{doc_root}/.htpasswd"
         run_cmd(f"htpasswd -cb {htpasswd_file} {config['username']} {config['password']}")
         auth_config = f"""
-        auth_basic "gLiTcH-Monitor";
+        auth_basic "{config['server_name']}-Monitor";
         auth_basic_user_file {htpasswd_file};"""
     
-    server_block = f"""# gLiTcH-Monitor
+    server_block = f"""# {config['server_name']}-Monitor
 server {{
     listen {listen_addr}:{port};
     root {doc_root};
@@ -253,6 +278,7 @@ def finish(config):
   Installation Complete!
 ═══════════════════════════════════════════════════════════════{RESET}
 
+  {CYAN}Server Name:{RESET}   {config['server_name']} SERVER
   {CYAN}Access URL:{RESET}    http://{addr}:{port}/dashboard.html
   {CYAN}Install Dir:{RESET}   {config['install_dir']}
   {CYAN}Auth:{RESET}          {'Enabled' if config['enable_auth'] else 'Disabled'}
