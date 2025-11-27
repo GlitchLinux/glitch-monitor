@@ -4,7 +4,7 @@ A lightweight, modern server monitoring dashboard for Linux systems. Built with 
 
 ![Dashboard Preview](screenshots/monitor-dashboard.png)
 
-## ✨ Features
+## Features
 
 - **Real-time monitoring** — Auto-refresh every 5-10 seconds
 - **Zero dependencies** — Just Apache/Nginx + PHP
@@ -15,7 +15,7 @@ A lightweight, modern server monitoring dashboard for Linux systems. Built with 
 - **SSL certificate tracking** — Never miss an expiry
 - **Status export** — Download comprehensive .txt reports
 
-## 📊 Pages
+## Pages
 
 | Page | Description |
 |------|-------------|
@@ -24,7 +24,7 @@ A lightweight, modern server monitoring dashboard for Linux systems. Built with 
 | `fail2ban.html` | Security monitor — Banned IPs, top attackers, jail config |
 | `status-download.php` | Export full server status as timestamped .txt |
 
-## 🚀 Quick Install
+## Quick Install
 
 ```bash
 git clone https://github.com/glitchlinux/glitch-monitor.git
@@ -45,13 +45,13 @@ The installer will:
 - Apache2 or Nginx + PHP 7.4+
 - Optional: fail2ban (for security monitoring)
 
-## 🔒 Security
+## Security
 
 By default binds to **localhost:8443 only**. For remote access:
 - Use SSH tunnel: `ssh -L 8443:localhost:8443 user@server`
 - Or deploy to existing website with HTTPS
 
-## 📸 Screenshots
+## Screenshots
 
 ### Dashboard
 ![Dashboard](screenshots/monitor-dashboard.png)
@@ -63,7 +63,7 @@ By default binds to **localhost:8443 only**. For remote access:
 ### Fail2ban Monitor
 ![Fail2ban](screenshots/fail2ban.png)
 
-## 🆚 Comparison
+## Comparison
 
 | Tool | RAM | Install Size | UI |
 |------|-----|--------------|-----|
@@ -72,11 +72,11 @@ By default binds to **localhost:8443 only**. For remote access:
 | Netdata | ~150MB | 300MB+ | Overkill |
 | **gLiTcH-Monitor** | **~5MB** | **<100KB** | **Modern** |
 
-## 📜 License
+## License
 
 MIT License — do whatever you want with it.
 
-## 🙏 Credits
+## Credits
 
 Built by [GLITCH](https://glitchlinux.com) 
 
