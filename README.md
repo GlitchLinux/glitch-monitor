@@ -78,7 +78,7 @@ MIT License — do whatever you want with it.
 
 ## 🙏 Credits
 
-Built by [gLiTcH](https://github.com/glitchlinux) with assistance from Claude AI.
+Built by [gLiTcH](https://github.com/glitchlinux) https://glitchlinux.com
 
 ---
 
