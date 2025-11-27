@@ -78,7 +78,7 @@ MIT License — do whatever you want with it.
 
 ## Credits
 
-Built by [GLITCH](https://glitchlinux.com) 
+Built by [GLITCH LINUX](https://glitchlinux.com) 
 
 ---
 
