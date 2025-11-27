@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gLiTcH-SERVER Status</title>
+    <link rel="icon" href="https://glitchserver.com/glitch.ico" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Ultra Compact Header -->
+        <header class="compact-header">
+            <div class="header-content">
+                <div class="header-main">
+                    <div class="server-title">
+                        <h1>gLiTcH SERVER</h1>
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text">System Online</span>
+                        </div>
+                    </div>
+                    
+                    <div class="header-buttons">
+                        <div class="button-group">
+                            <a href="/jobs/jobs.html" target="_blank" class="nav-btn glow-btn">
+                                <span class="btn-icon">💾</span>
+                                JOBS MONITOR
+                            </a>
+                            <a href="/clogger-live.html" target="_blank" class="nav-btn glow-btn">
+                                <span class="btn-icon">>_</span>
+                                CLOGGER.LOG
+                            </a>
+                        </div>
+                        <div class="button-group">
+                            <a href="https://glitchlinux.wtf" target="_blank" class="nav-btn glow-btn">
+                                <span class="btn-icon">🌐</span>
+                                glitchlinux.wtf
+                            </a>
+                            <a href="/stats.html" target="_blank" class="nav-btn glow-btn">
+                                <span class="btn-icon">📊</span>
+                                STATISTICS
+                            </a>
+                            <a href="/fail2ban.html" target="_blank" class="nav-btn glow-btn">
+                                <span class="btn-icon">🛡️</span>
+                                FAIL2BAN
+                            </a>
+                            <a href="/status-download.php" class="nav-btn glow-btn">
+                                <span class="btn-icon">📥</span>
+                                STATUS
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <!-- Disk Usage -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">💾</span>
+                    <h3>Disk Usage</h3>
+                </div>
+                <div class="stat-value" id="disk-percent">75%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="disk-progress" style="width: 75%"></div>
+                </div>
+                <div class="stat-details">
+                    <span id="disk-used">753G</span> / <span id="disk-total">938G</span>
+                </div>
+            </div>
+
+            <!-- RAM Usage -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🧠</span>
+                    <h3>RAM Usage</h3>
+                </div>
+                <div class="stat-value" id="ram-percent">48%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ram-progress" style="width: 48%"></div>
+                </div>
+                <div class="stat-details">
+                    <span id="ram-used">2.2G</span> / <span id="ram-total">5.8G</span>
+                </div>
+            </div>
+
+            <!-- CPU Load -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">⚙️</span>
+                    <h3>CPU Load</h3>
+                </div>
+                <div class="stat-value" id="cpu-load">0.07</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cpu-progress" style="width: 7%"></div>
+                </div>
+                <div class="stat-details">
+                    Avg load per core
+                </div>
+            </div>
+
+            <!-- Uptime -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📈</span>
+                    <h3>Uptime</h3>
+                </div>
+                <div class="stat-value uptime" id="uptime">2 days, 15:40</div>
+                <div class="stat-details" id="uptime-detailed">
+                    Since 2025-11-09 06:18:09
+                </div>
+            </div>
+
+            <!-- Private IP -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🏠</span>
+                    <h3>Private IPv4</h3>
+                </div>
+                <div class="stat-value ip-address" id="private-ip">192.168.0.198</div>
+                <div class="stat-details">
+                    Local Network Address
+                </div>
+            </div>
+
+            <!-- Public IP -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🌍</span>
+                    <h3>Public IPv4</h3>
+                </div>
+                <div class="stat-value ip-address" id="public-ip">85.226.224.27</div>
+                <div class="stat-details">
+                    External Network Address
+                </div>
+            </div>
+
+            <!-- Services -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🔧</span>
+                    <h3>Active Services</h3>
+                </div>
+                <div class="stat-value" id="services-count">40</div>
+                <div class="stat-details">
+                    Running systemd services
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🐧</span>
+                    <h3>System Info</h3>
+                </div>
+                <div class="stat-value small-text" id="os-version">gLiTcH SERVER</div>
+                <div class="stat-details" id="kernel-version">
+                    Kernel: 6.1.0-50-amd64
+                </div>
+            </div>
+
+            <!-- Network Activity -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📡</span>
+                    <h3>Network Traffic</h3>
+                </div>
+                <div class="stat-value small-text" id="network-rx">↓ 1.0 MB</div>
+                <div class="stat-details" id="network-tx">
+                    ↑ 1.0 MB
+                </div>
+            </div>
+
+            <!-- Process Count -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📊</span>
+                    <h3>Processes</h3>
+                </div>
+                <div class="stat-value" id="process-count">279</div>
+                <div class="stat-details">
+                    Total running processes
+                </div>
+            </div>
+
+            <!-- Temperature -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🌡️</span>
+                    <h3>Temperature</h3>
+                </div>
+                <div class="stat-value" id="temperature">27.8°C</div>
+                <div class="stat-details">
+                    System temperature
+                </div>
+            </div>
+
+            <!-- Last Updated -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🕐</span>
+                    <h3>Last Updated</h3>
+                </div>
+                <div class="stat-value small-text" id="last-update">8:59:03 PM</div>
+                <div class="stat-details">
+                    Auto-refresh every 5 seconds
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="tech-stack">
+                <span class="tech-badge">🐧 Debian 12</span>
+                <span class="tech-badge">🌐 Apache</span>
+                <span class="tech-badge">🐘 PHP 9.4</span>
+                <span class="tech-badge">🔒 SSL/TLS</span>
+                <span class="tech-badge">⚡ Optimized</span>
+            </div>
+            <p class="footer-text">✨ Powered by Debian GNU/Linux • Real-time Monitoring</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

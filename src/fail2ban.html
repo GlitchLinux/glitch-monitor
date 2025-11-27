@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gLiTcH-SERVER Fail2ban Monitor</title>
+    <link rel="icon" href="https://glitchserver.com/glitch.ico" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .section-title {
+            color: #32cd32;
+            font-size: 1.2em;
+            margin: 25px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .banned-ip {
+            display: inline-block;
+            background: #3a2020;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 6px;
+            border: 1px solid #ff4500;
+            color: #ff4500;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        .attacker-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            border-bottom: 1px solid #3a3a3a;
+            font-family: 'Courier New', monospace;
+        }
+        .attacker-row:hover {
+            background: #3a3a3a;
+        }
+        .attacker-ip { color: #ff6b6b; }
+        .attacker-count { color: #32cd32; font-weight: bold; }
+        .status-active {
+            background: rgba(50, 205, 50, 0.2);
+            color: #32cd32;
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid #32cd32;
+            font-weight: bold;
+        }
+        .pre-block {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #aaa;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="compact-header">
+            <div class="header-content">
+                <div class="header-main">
+                    <div class="server-title">
+                        <h1>🛡️ FAIL2BAN MONITOR</h1>
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text" id="jail-status">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="header-buttons">
+                        <a href="/dashboard.html" class="glow-btn"><span class="btn-icon">🏠</span> DASHBOARD</a>
+                        <a href="/stats.html" target="_blank" class="glow-btn"><span class="btn-icon">📊</span> STATISTICS</a>
+                        <a href="/clogger-live.html" target="_blank" class="glow-btn"><span class="btn-icon">>_</span> CLOGGER</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Overview Cards -->
+        <div class="section-title">📊 Overview</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🚫</span>
+                    <h3>Currently Banned</h3>
+                </div>
+                <div class="stat-value" id="currently-banned" style="color: #ff4500;">0</div>
+                <div class="stat-details">Active IP bans</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📈</span>
+                    <h3>Total Banned</h3>
+                </div>
+                <div class="stat-value" id="total-banned">0</div>
+                <div class="stat-details">Since service start</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">👁️</span>
+                    <h3>Unique Attackers</h3>
+                </div>
+                <div class="stat-value" id="unique-attackers">0</div>
+                <div class="stat-details">Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">⏱️</span>
+                    <h3>Ban Duration</h3>
+                </div>
+                <div class="stat-value small-text" id="ban-duration">-</div>
+                <div class="stat-details">Per offense</div>
+            </div>
+        </div>
+
+        <!-- Currently Banned IPs -->
+        <div class="section-title">🚷 Currently Banned IPs</div>
+        <div class="stat-card">
+            <div id="banned-ips-container">
+                <span class="banned-ip">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Top Attackers -->
+        <div class="section-title">🎯 Top Attackers (24h) - Attempts per IP</div>
+        <div class="stat-card">
+            <div id="top-attackers-list">Loading...</div>
+        </div>
+
+        <!-- Fail2ban Config -->
+        <div class="section-title">⚙️ Jail Configuration</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🔢</span>
+                    <h3>Max Retries</h3>
+                </div>
+                <div class="stat-value" id="max-retry">5</div>
+                <div class="stat-details">Before ban</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🕐</span>
+                    <h3>Find Time</h3>
+                </div>
+                <div class="stat-value small-text" id="find-time">10 min</div>
+                <div class="stat-details">Detection window</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🚪</span>
+                    <h3>Protected Ports</h3>
+                </div>
+                <div class="stat-value small-text" id="ports">22, 2222</div>
+                <div class="stat-details">SSH ports</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">✅</span>
+                    <h3>Ignored IPs</h3>
+                </div>
+                <div class="stat-value small-text" id="ignored-ips">Local</div>
+                <div class="stat-details">Whitelisted</div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="tech-stack">
+                <span class="tech-badge">🔄 Auto-refresh: 5s</span>
+                <span class="tech-badge" id="last-update">Updated: --</span>
+            </div>
+            <p class="footer-text">🛡️ Fail2ban Protection System</p>
+        </footer>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const response = await fetch('stats-extended.php');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        }
+
+        function updateUI(data) {
+            const f2b = data.fail2ban;
+            if (!f2b) return;
+
+            document.getElementById('jail-status').textContent = 'SSHD Jail Active';
+            document.getElementById('currently-banned').textContent = f2b.currently_banned;
+            document.getElementById('total-banned').textContent = f2b.total_banned;
+            document.getElementById('unique-attackers').textContent = f2b.unique_attackers_today;
+            
+            const hours = Math.floor(f2b.ban_duration / 3600);
+            document.getElementById('ban-duration').textContent = hours + ' hour' + (hours > 1 ? 's' : '');
+
+            // Banned IPs
+            const container = document.getElementById('banned-ips-container');
+            if (f2b.banned_ips && f2b.banned_ips.length > 0) {
+                container.innerHTML = f2b.banned_ips.map(ip => 
+                    '<span class="banned-ip">' + ip + '</span>'
+                ).join('');
+            } else {
+                container.innerHTML = '<span style="color:#32cd32;">✓ No IPs currently banned</span>';
+            }
+
+            // Top attackers
+            const attackersList = document.getElementById('top-attackers-list');
+            if (f2b.top_attackers) {
+                const lines = f2b.top_attackers.trim().split('\n');
+                attackersList.innerHTML = lines.map(line => {
+                    const parts = line.trim().split(/\s+/);
+                    const count = parts[0];
+                    const ip = parts[1];
+                    return '<div class="attacker-row"><span class="attacker-ip">' + ip + '</span><span class="attacker-count">' + count + ' attempts</span></div>';
+                }).join('');
+            } else {
+                attackersList.innerHTML = '<div style="color:#888;">No attack data</div>';
+            }
+
+            document.getElementById('last-update').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+        }
+
+        fetchData();
+        setInterval(fetchData, 5000);
+    </script>
+</body>
+</html>
