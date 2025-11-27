@@ -39,7 +39,7 @@ The installer will:
 - Optionally deploy to an existing website as `/monitor/`
 - Configure everything automatically
 
-## 📋 Requirements
+## Requirements
 
 - Linux (Debian/Ubuntu, RHEL/Fedora, Arch)
 - Apache2 or Nginx + PHP 7.4+
