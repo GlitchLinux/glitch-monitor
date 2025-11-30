@@ -218,8 +218,9 @@ def configure_apache_php(webserver, distro):
 def get_config():
     print(f"\n{CYAN}[2/8] Configuration...{RESET}")
     
-    # Server name
-    default_name = [LINUX]
+    # Server name - try hostname, fallback to [LINUX]
+    hostname = run_cmd("hostname -s", check=False, silent=True)
+    default_name = hostname if hostname else "[LINUX]"
     server_name = input(f"  Server name [{default_name}]: ").strip() or default_name
     
     # Website path
