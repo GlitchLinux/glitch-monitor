@@ -23,9 +23,9 @@ echo "$serverName STATUS REPORT\n";
 echo "Generated: $timestamp\n\n";
 
 // SYSTEM OVERVIEW
-echo "================\n";
+echo "=================\n";
 echo " SYSTEM OVERVIEW\n";
-echo "================\n\n";
+echo "=================\n\n";
 
 echo "Hostname:        " . execCommand("hostname") . "\n";
 $os = execCommand("cat /etc/os-release | grep PRETTY_NAME | cut -d'\"' -f2");
