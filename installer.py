@@ -297,8 +297,8 @@ def copy_files(config, dest_dir, customize_name=True):
 
 def deploy_localhost(config):
     print(f"\n{CYAN}[3/8] Deploying to localhost...{RESET}")
-    
-    localhost_dir = "/var/www/glitch-monitor"
+
+    localhost_dir = "/var/www/monitor"
     copy_files(config, localhost_dir)
     
     # Set permissions
@@ -425,9 +425,9 @@ bantime = 3600
 
 def setup_apache_localhost(config, webserver):
     print(f"\n{CYAN}[7/8] Configuring Apache for localhost...{RESET}")
-    
+
     port = config['port']
-    doc_root = "/var/www/glitch-monitor"
+    doc_root = "/var/www/monitor"
     
     # Auth config
     auth_config = ""
@@ -455,22 +455,22 @@ Listen 127.0.0.1:{port}
     </Directory>
     {auth_config}
     
-    ErrorLog /var/log/apache2/glitch-monitor-error.log
-    CustomLog /var/log/apache2/glitch-monitor-access.log combined
+    ErrorLog /var/log/apache2/monitor-error.log
+    CustomLog /var/log/apache2/monitor-access.log combined
 </VirtualHost>
 """
-    
+
     # Determine config path based on distro
     if webserver == 'apache2':
-        vhost_file = "/etc/apache2/sites-available/glitch-monitor.conf"
+        vhost_file = "/etc/apache2/sites-available/monitor.conf"
         with open(vhost_file, 'w') as f:
             f.write(vhost)
-        run_cmd("a2ensite glitch-monitor.conf 2>/dev/null", silent=True)
+        run_cmd("a2ensite monitor.conf 2>/dev/null", silent=True)
         run_cmd("systemctl reload apache2")
     else:
         # RHEL/httpd
         vhost = vhost.replace('/var/log/apache2/', '/var/log/httpd/')
-        vhost_file = "/etc/httpd/conf.d/glitch-monitor.conf"
+        vhost_file = "/etc/httpd/conf.d/monitor.conf"
         with open(vhost_file, 'w') as f:
             f.write(vhost)
         run_cmd("systemctl reload httpd")
@@ -488,7 +488,7 @@ def finish(config):
   Installation Complete!
 ═════════════════════════{RESET}
 
-  {CYAN}Server Name:{RESET}      {config['server_name']} SERVER
+  {CYAN}Server Name:{RESET}      {config['server_name']}
   {CYAN}Authentication:{RESET}   {'Enabled (user: ' + config['username'] + ')' if config['enable_auth'] else 'Disabled'}
 """)
     
