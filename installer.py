@@ -284,8 +284,8 @@ def copy_files(config, dest_dir, customize_name=True):
                 content = rf.read()
             
             # Replace gLiTcH SERVER references
-            content = content.replace('gLiTcH SERVER', f'{server_name} SERVER')
-            content = content.replace('gLiTcH-SERVER', f'{server_name}-SERVER')
+            content = content.replace('gLiTcH SERVER', f'{server_name}')
+            content = content.replace('gLiTcH-SERVER', f'{server_name}')
             content = content.replace('gLiTcH-Monitor', f'{server_name}-Monitor')
             
             with open(dest_file, 'w') as wf:
