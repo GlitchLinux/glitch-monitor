@@ -70,17 +70,28 @@ function getUptimeStats() {
 function getNetworkStats() {
     // Get private IP
     $privateIP = execCommand("hostname -I | awk '{print $1}'");
-    
+
     // Get public IP (with timeout to avoid hanging)
     $publicIP = execCommand("timeout 2 curl -s ifconfig.me 2>/dev/null || echo 'N/A'");
-    
+
+    // Auto-detect primary network interface
+    $interface = trim(execCommand("ip route | grep default | awk '{print \$5}' | head -1"));
+    if (empty($interface)) {
+        // Fallback: get first non-loopback interface
+        $interface = trim(execCommand("ls /sys/class/net/ | grep -v lo | head -1"));
+    }
+
     // Get network traffic (RX/TX in MB)
-    $rx = execCommand("cat /sys/class/net/enp0s3/statistics/rx_bytes 2>/dev/null || echo 0");
-    $tx = execCommand("cat /sys/class/net/enp0s3/statistics/tx_bytes 2>/dev/null || echo 0");
-    
+    $rx = 0;
+    $tx = 0;
+    if (!empty($interface)) {
+        $rx = execCommand("cat /sys/class/net/$interface/statistics/rx_bytes 2>/dev/null || echo 0");
+        $tx = execCommand("cat /sys/class/net/$interface/statistics/tx_bytes 2>/dev/null || echo 0");
+    }
+
     $rxMB = round((int)$rx / 1024 / 1024, 2);
     $txMB = round((int)$tx / 1024 / 1024, 2);
-    
+
     return [
         'private_ip' => $privateIP ?: 'N/A',
         'public_ip' => $publicIP ?: 'N/A',
