@@ -484,9 +484,9 @@ def finish(config):
     
     # Build output message
     print(f"""
-{GREEN}{BOLD}═══════════════════════════════════════════════════════════════════════════════
+{GREEN}{BOLD}════════════
   Installation Complete!
-═══════════════════════════════════════════════════════════════════════════════{RESET}
+═════════════════════════{RESET}
 
   {CYAN}Server Name:{RESET}      {config['server_name']} SERVER
   {CYAN}Authentication:{RESET}   {'Enabled (user: ' + config['username'] + ')' if config['enable_auth'] else 'Disabled'}
