@@ -219,7 +219,7 @@ def get_config():
     print(f"\n{CYAN}[2/8] Configuration...{RESET}")
     
     # Server name
-    default_name = "gLiTcH"
+    default_name = "Linux"
     server_name = input(f"  Server name [{default_name}]: ").strip() or default_name
     
     # Website path
