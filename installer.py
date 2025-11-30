@@ -58,16 +58,18 @@ def detect_distro():
         return 'unknown'
 
 def install_dependencies():
-    print(f"\n{CYAN}[1/7] Checking and installing dependencies...{RESET}")
-    
+    print(f"\n{CYAN}[1/8] Checking and installing dependencies...{RESET}")
+
     distro = detect_distro()
     print(f"  {GREEN}✓{RESET} Detected: {distro.capitalize()}-based system")
-    
+
     # Check what's missing
     apache = shutil.which('apache2') or shutil.which('httpd')
     php = shutil.which('php')
     f2b = shutil.which('fail2ban-client')
-    
+    curl = shutil.which('curl')
+    htpasswd = shutil.which('htpasswd')
+
     missing = []
     if not apache:
         missing.append('apache')
@@ -75,13 +77,19 @@ def install_dependencies():
         missing.append('php')
     if not f2b:
         missing.append('fail2ban')
-    
+    if not curl:
+        missing.append('curl')
+    if not htpasswd:
+        missing.append('apache-utils')
+
     if not missing:
         print(f"  {GREEN}✓{RESET} All dependencies already installed")
-        return 'apache2' if shutil.which('apache2') else 'httpd'
-    
+        webserver = 'apache2' if shutil.which('apache2') else 'httpd'
+        configure_apache_php(webserver, distro)
+        return webserver
+
     print(f"  {YELLOW}⚠{RESET} Missing: {', '.join(missing)}")
-    
+
     install = input(f"  Install missing dependencies? [Y/n]: ").strip().lower()
     if install == 'n':
         if not apache or not php:
@@ -89,83 +97,126 @@ def install_dependencies():
             sys.exit(1)
     else:
         print(f"  {CYAN}Installing dependencies...{RESET}")
-        
+
         if distro == 'debian':
             run_cmd("apt-get update -qq")
+            packages = []
             if 'apache' in missing:
-                print(f"    Installing apache2...")
-                run_cmd("apt-get install -y apache2")
+                packages.append('apache2')
             if 'php' in missing:
-                print(f"    Installing php...")
-                run_cmd("apt-get install -y php libapache2-mod-php")
+                packages.extend(['php', 'libapache2-mod-php', 'php-cli'])
             if 'fail2ban' in missing:
-                print(f"    Installing fail2ban...")
-                run_cmd("apt-get install -y fail2ban")
-                
+                packages.append('fail2ban')
+            if 'curl' in missing:
+                packages.append('curl')
+            if 'apache-utils' in missing:
+                packages.append('apache2-utils')
+
+            if packages:
+                print(f"    Installing: {', '.join(packages)}")
+                run_cmd(f"apt-get install -y {' '.join(packages)}")
+
         elif distro == 'redhat':
+            packages = []
             if 'apache' in missing:
-                print(f"    Installing httpd...")
-                run_cmd("dnf install -y httpd")
-                run_cmd("systemctl enable --now httpd")
+                packages.append('httpd')
             if 'php' in missing:
-                print(f"    Installing php...")
-                run_cmd("dnf install -y php php-common")
+                packages.extend(['php', 'php-common', 'php-cli'])
             if 'fail2ban' in missing:
-                print(f"    Installing fail2ban...")
-                run_cmd("dnf install -y fail2ban")
-                
+                packages.append('fail2ban')
+            if 'curl' in missing:
+                packages.append('curl')
+            if 'apache-utils' in missing:
+                packages.append('httpd-tools')
+
+            if packages:
+                print(f"    Installing: {', '.join(packages)}")
+                run_cmd(f"dnf install -y {' '.join(packages)}")
+
         elif distro == 'arch':
+            packages = []
             if 'apache' in missing:
-                print(f"    Installing apache...")
-                run_cmd("pacman -S --noconfirm apache")
-                run_cmd("systemctl enable --now httpd")
+                packages.append('apache')
             if 'php' in missing:
-                print(f"    Installing php...")
-                run_cmd("pacman -S --noconfirm php php-apache")
+                packages.extend(['php', 'php-apache'])
             if 'fail2ban' in missing:
-                print(f"    Installing fail2ban...")
-                run_cmd("pacman -S --noconfirm fail2ban")
+                packages.append('fail2ban')
+            if 'curl' in missing:
+                packages.append('curl')
+
+            if packages:
+                print(f"    Installing: {', '.join(packages)}")
+                run_cmd(f"pacman -S --noconfirm {' '.join(packages)}")
         else:
-            print(f"{YELLOW}  Unknown distro - please install apache2, php, fail2ban manually{RESET}")
-    
-    # Enable and start services
-    if distro == 'debian':
-        run_cmd("systemctl enable apache2", silent=True)
-        run_cmd("systemctl start apache2", silent=True)
-    else:
-        run_cmd("systemctl enable httpd", silent=True)
-        run_cmd("systemctl start httpd", silent=True)
-    
-    if shutil.which('fail2ban-client'):
-        run_cmd("systemctl enable fail2ban", silent=True)
-        run_cmd("systemctl start fail2ban", silent=True)
-    
+            print(f"{YELLOW}  Unknown distro - please install apache2, php, fail2ban, curl manually{RESET}")
+
     # Verify installation
     apache = shutil.which('apache2') or shutil.which('httpd')
     php = shutil.which('php')
-    
+
     if not apache:
         print(f"{RED}Error: Apache installation failed{RESET}")
         sys.exit(1)
     if not php:
         print(f"{RED}Error: PHP installation failed{RESET}")
         sys.exit(1)
-    
+
     webserver = 'apache2' if shutil.which('apache2') else 'httpd'
+
+    # Configure Apache and PHP
+    configure_apache_php(webserver, distro)
+
+    # Configure and start services
+    if distro == 'debian':
+        run_cmd("systemctl enable apache2", silent=True)
+        run_cmd("systemctl start apache2", silent=True)
+    else:
+        run_cmd("systemctl enable httpd", silent=True)
+        run_cmd("systemctl start httpd", silent=True)
+
+    # Verify versions
     php_version = run_cmd("php -v | head -1 | cut -d' ' -f2")
-    
+
     print(f"  {GREEN}✓{RESET} Web server: {webserver}")
     print(f"  {GREEN}✓{RESET} PHP: {php_version}")
-    
+    print(f"  {GREEN}✓{RESET} curl: installed")
+
+    if shutil.which('htpasswd'):
+        print(f"  {GREEN}✓{RESET} htpasswd: installed")
+
     if shutil.which('fail2ban-client'):
         print(f"  {GREEN}✓{RESET} fail2ban: installed")
     else:
         print(f"  {YELLOW}⚠{RESET} fail2ban: not installed (optional)")
-    
+
     return webserver
 
+def configure_apache_php(webserver, distro):
+    """Ensure Apache is properly configured to run PHP"""
+    print(f"  {CYAN}Configuring Apache PHP module...{RESET}")
+
+    if webserver == 'apache2':
+        # Enable PHP module on Debian-based systems
+        run_cmd("a2enmod php7.4 2>/dev/null || a2enmod php8.0 2>/dev/null || a2enmod php8.1 2>/dev/null || a2enmod php8.2 2>/dev/null || a2enmod php8.3 2>/dev/null", silent=True)
+        run_cmd("a2enmod rewrite", silent=True)
+        print(f"  {GREEN}✓{RESET} PHP module enabled")
+    elif distro == 'arch':
+        # Configure PHP for Apache on Arch
+        php_conf = "/etc/httpd/conf/httpd.conf"
+        if os.path.exists(php_conf):
+            with open(php_conf, 'r') as f:
+                content = f.read()
+            if 'LoadModule php_module' not in content:
+                with open(php_conf, 'a') as f:
+                    f.write('\nLoadModule php_module modules/libphp.so\n')
+                    f.write('AddHandler php-script .php\n')
+                    f.write('Include conf/extra/php_module.conf\n')
+                print(f"  {GREEN}✓{RESET} PHP module configured for httpd")
+    else:
+        print(f"  {GREEN}✓{RESET} PHP configured")
+
 def get_config():
-    print(f"\n{CYAN}[2/7] Configuration...{RESET}")
+    print(f"\n{CYAN}[2/8] Configuration...{RESET}")
     
     # Server name
     default_name = "gLiTcH"
@@ -244,7 +295,7 @@ def copy_files(config, dest_dir, customize_name=True):
     return True
 
 def deploy_localhost(config):
-    print(f"\n{CYAN}[3/7] Deploying to localhost...{RESET}")
+    print(f"\n{CYAN}[3/8] Deploying to localhost...{RESET}")
     
     localhost_dir = "/var/www/glitch-monitor"
     copy_files(config, localhost_dir)
@@ -259,8 +310,8 @@ def deploy_localhost(config):
 def deploy_website(config):
     if not config['website_path']:
         return
-    
-    print(f"\n{CYAN}[4/7] Deploying to website...{RESET}")
+
+    print(f"\n{CYAN}[4/8] Deploying to website...{RESET}")
     
     monitor_dir = os.path.join(config['website_path'], 'monitor')
     copy_files(config, monitor_dir)
@@ -273,21 +324,21 @@ def deploy_website(config):
     print(f"  {GREEN}✓{RESET} Files copied to {monitor_dir}")
 
 def setup_sudoers():
-    print(f"\n{CYAN}[5/7] Configuring sudoers...{RESET}")
-    
+    print(f"\n{CYAN}[5/8] Configuring sudoers...{RESET}")
+
     sudoers_content = """# gLiTcH-Monitor - allow web server to read system stats
 www-data ALL=(ALL) NOPASSWD: /usr/bin/fail2ban-client status sshd
 www-data ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u ssh *
 apache ALL=(ALL) NOPASSWD: /usr/bin/fail2ban-client status sshd
 apache ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u ssh *
 """
-    
+
     sudoers_file = "/etc/sudoers.d/glitch-monitor"
     with open(sudoers_file, 'w') as f:
         f.write(sudoers_content)
-    
+
     os.chmod(sudoers_file, 0o440)
-    
+
     # Validate
     result = run_cmd("visudo -c", check=False, silent=True)
     if result and ("parsed OK" in result or result == ""):
@@ -295,8 +346,84 @@ apache ALL=(ALL) NOPASSWD: /usr/bin/journalctl -u ssh *
     else:
         print(f"  {GREEN}✓{RESET} Sudoers configured")
 
+def setup_fail2ban():
+    """Configure fail2ban with minimal sshd jail"""
+    print(f"\n{CYAN}[6/8] Configuring fail2ban...{RESET}")
+
+    if not shutil.which('fail2ban-client'):
+        print(f"  {YELLOW}⚠{RESET} fail2ban not installed, skipping configuration")
+        return
+
+    # Create jail.local if it doesn't exist or update it
+    jail_local = "/etc/fail2ban/jail.local"
+
+    # Minimal fail2ban configuration
+    jail_config = """[DEFAULT]
+# Ban hosts for 1 hour (3600 seconds)
+bantime = 3600
+
+# Host is banned if it has generated "maxretry" failures during the "findtime" interval
+findtime = 600
+
+# Number of failures before a host gets banned
+maxretry = 5
+
+[sshd]
+enabled = true
+port = ssh
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s
+maxretry = 5
+bantime = 3600
+"""
+
+    # Check if jail.local exists
+    if os.path.exists(jail_local):
+        print(f"  {YELLOW}⚠{RESET} {jail_local} already exists")
+        # Check if sshd jail is enabled
+        with open(jail_local, 'r') as f:
+            content = f.read()
+
+        if '[sshd]' not in content or 'enabled = true' not in content:
+            print(f"  {CYAN}Adding sshd jail configuration...{RESET}")
+            with open(jail_local, 'a') as f:
+                f.write('\n# Added by gLiTcH-Monitor installer\n')
+                f.write(jail_config)
+            print(f"  {GREEN}✓{RESET} sshd jail configuration added")
+        else:
+            print(f"  {GREEN}✓{RESET} sshd jail already configured")
+    else:
+        print(f"  {CYAN}Creating {jail_local}...{RESET}")
+        with open(jail_local, 'w') as f:
+            f.write('# gLiTcH-Monitor fail2ban configuration\n')
+            f.write(jail_config)
+        print(f"  {GREEN}✓{RESET} jail.local created")
+
+    # Enable and restart fail2ban
+    print(f"  {CYAN}Starting fail2ban service...{RESET}")
+    run_cmd("systemctl enable fail2ban", silent=True)
+    run_cmd("systemctl restart fail2ban", silent=True)
+
+    # Wait a moment for fail2ban to start
+    import time
+    time.sleep(2)
+
+    # Verify fail2ban is running
+    status = run_cmd("systemctl is-active fail2ban", check=False, silent=True)
+    if status == "active":
+        print(f"  {GREEN}✓{RESET} fail2ban service is running")
+
+        # Check sshd jail status
+        sshd_status = run_cmd("fail2ban-client status sshd 2>/dev/null", check=False, silent=True)
+        if sshd_status:
+            print(f"  {GREEN}✓{RESET} sshd jail is active")
+        else:
+            print(f"  {YELLOW}⚠{RESET} sshd jail may not be active yet")
+    else:
+        print(f"  {YELLOW}⚠{RESET} fail2ban service status: {status}")
+
 def setup_apache_localhost(config, webserver):
-    print(f"\n{CYAN}[6/7] Configuring Apache for localhost...{RESET}")
+    print(f"\n{CYAN}[7/8] Configuring Apache for localhost...{RESET}")
     
     port = config['port']
     doc_root = "/var/www/glitch-monitor"
@@ -350,7 +477,7 @@ Listen 127.0.0.1:{port}
     print(f"  {GREEN}✓{RESET} Apache configured on localhost:{port}")
 
 def finish(config):
-    print(f"\n{CYAN}[7/7] Finishing up...{RESET}")
+    print(f"\n{CYAN}[8/8] Finishing up...{RESET}")
     
     port = config['port']
     
@@ -389,6 +516,7 @@ def main():
     deploy_localhost(config)
     deploy_website(config)
     setup_sudoers()
+    setup_fail2ban()
     setup_apache_localhost(config, webserver)
     finish(config)
 
