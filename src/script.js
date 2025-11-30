@@ -83,6 +83,11 @@ async function fetchStats() {
         if (data.system) {
             document.getElementById('os-version').textContent = data.system.os;
             document.getElementById('kernel-version').textContent = 'Kernel: ' + data.system.kernel;
+
+            // Update footer badges
+            document.getElementById('footer-os').textContent = '🐧 ' + data.system.os;
+            document.getElementById('footer-php').textContent = '🐘 PHP ' + data.system.php;
+            document.getElementById('footer-text').textContent = '✨ Powered by ' + data.system.os + ' • Real-time Monitoring';
         }
 
         // Update process count
