@@ -468,8 +468,23 @@ Listen 127.0.0.1:{port}
         run_cmd("a2ensite monitor.conf 2>/dev/null", silent=True)
         run_cmd("systemctl reload apache2")
     else:
-        # RHEL/httpd
+        # RHEL/httpd/Arch
         vhost = vhost.replace('/var/log/apache2/', '/var/log/httpd/')
+
+        # Create conf.d directory if it doesn't exist (needed for Arch)
+        conf_dir = "/etc/httpd/conf.d"
+        if not os.path.exists(conf_dir):
+            os.makedirs(conf_dir, mode=0o755)
+            # Ensure it's included in main httpd.conf
+            httpd_conf = "/etc/httpd/conf/httpd.conf"
+            if os.path.exists(httpd_conf):
+                with open(httpd_conf, 'r') as f:
+                    content = f.read()
+                if 'IncludeOptional conf.d/*.conf' not in content:
+                    with open(httpd_conf, 'a') as f:
+                        f.write('\n# Include monitor configuration\n')
+                        f.write('IncludeOptional conf.d/*.conf\n')
+
         vhost_file = "/etc/httpd/conf.d/monitor.conf"
         with open(vhost_file, 'w') as f:
             f.write(vhost)
