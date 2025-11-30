@@ -155,7 +155,7 @@
         <footer>
             <div class="tech-stack">
                 <span class="tech-badge">🛡️ Fail2ban</span>
-                <span class="tech-badge">🐧 Debian</span>
+                <span class="tech-badge" id="footer-os">🐧 Linux</span>
                 <span class="tech-badge">🔒 SSH Protection</span>
             </div>
             <p class="footer-text">✨ Real-time Security Monitoring</p>
@@ -226,8 +226,22 @@
             }
         }
 
+        // Fetch OS info for footer
+        async function fetchOSInfo() {
+            try {
+                const response = await fetch('server-stats.php');
+                const data = await response.json();
+                if (data.system) {
+                    document.getElementById('footer-os').textContent = '🐧 ' + data.system.os;
+                }
+            } catch (error) {
+                console.error('Error fetching OS info:', error);
+            }
+        }
+
         // Initial load
         fetchFail2banData();
+        fetchOSInfo();
 
         // Auto-refresh every 10 seconds
         setInterval(fetchFail2banData, 10000);

@@ -292,7 +292,7 @@
 
         <footer>
             <div class="tech-stack">
-                <span class="tech-badge">🐧 Debian</span>
+                <span class="tech-badge" id="footer-os">🐧 Linux</span>
                 <span class="tech-badge">🌐 Apache</span>
                 <span class="tech-badge">🔒 SSL/TLS</span>
                 <span class="tech-badge">📊 Extended Stats</span>
@@ -401,8 +401,22 @@
             }
         }
 
+        // Fetch OS info for footer
+        async function fetchOSInfo() {
+            try {
+                const response = await fetch('server-stats.php');
+                const data = await response.json();
+                if (data.system) {
+                    document.getElementById('footer-os').textContent = '🐧 ' + data.system.os;
+                }
+            } catch (error) {
+                console.error('Error fetching OS info:', error);
+            }
+        }
+
         // Initial load
         fetchExtendedStats();
+        fetchOSInfo();
 
         // Auto-refresh every 15 seconds
         setInterval(fetchExtendedStats, 15000);

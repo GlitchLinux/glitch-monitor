@@ -113,10 +113,12 @@ function getServicesStats() {
 function getSystemInfo() {
     $os = execCommand("cat /etc/os-release | grep PRETTY_NAME | cut -d'\"' -f2");
     $kernel = execCommand("uname -r");
-    
+    $php = phpversion();
+
     return [
-        'os' => $os ?: 'Debian',
-        'kernel' => $kernel ?: 'Unknown'
+        'os' => $os ?: 'Linux',
+        'kernel' => $kernel ?: 'Unknown',
+        'php' => $php ?: 'Unknown'
     ];
 }
 
