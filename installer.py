@@ -217,9 +217,9 @@ def configure_apache_php(webserver, distro):
 
 def get_config():
     print(f"\n{CYAN}[2/8] Configuration...{RESET}")
-    
-    # Server name
-    default_name = "gLiTcH"
+
+    # Server name - use actual hostname as default
+    default_name = run_cmd("hostname") or "SERVER"
     server_name = input(f"  Server name [{default_name}]: ").strip() or default_name
     
     # Website path
