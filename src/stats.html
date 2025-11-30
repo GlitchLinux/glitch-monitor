@@ -121,6 +121,12 @@
             padding: 4px 0;
             border-bottom: 1px solid #333;
         }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
     </style>
 </head>
 <body>
@@ -139,3 +145,267 @@
                         <a href="/dashboard.html" class="glow-btn"><span class="btn-icon">🏠</span> DASHBOARD</a>
                         <a href="/fail2ban.html" target="_blank" class="glow-btn"><span class="btn-icon">🛡️</span> FAIL2BAN</a>
                         <a href="/status-download.php" class="glow-btn"><span class="btn-icon">📥</span> STATUS</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- System Alerts -->
+        <div class="section-title">
+            ⚠️ System Alerts
+        </div>
+        <div id="alerts-container" style="margin-bottom: 30px;">
+            <div class="alert-box ok">✓ System operating normally</div>
+        </div>
+
+        <!-- Apache Statistics -->
+        <div class="section-title">
+            🌐 Apache Web Server
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📡</span>
+                    <h3>HTTP Connections</h3>
+                </div>
+                <div class="stat-value" id="apache-http">0</div>
+                <div class="stat-details">Port 80</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🔒</span>
+                    <h3>HTTPS Connections</h3>
+                </div>
+                <div class="stat-value" id="apache-https">0</div>
+                <div class="stat-details">Port 443</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">⚙️</span>
+                    <h3>Apache Processes</h3>
+                </div>
+                <div class="stat-value" id="apache-procs">0</div>
+                <div class="stat-details">Worker processes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">📊</span>
+                    <h3>Requests Today</h3>
+                </div>
+                <div class="stat-value" id="apache-requests">0</div>
+                <div class="stat-details">Total HTTP requests</div>
+            </div>
+        </div>
+
+        <!-- Network Details -->
+        <div class="section-title">
+            🌐 Network Details
+        </div>
+        <div style="background: #2a2a2a; border-radius: 8px; padding: 15px; margin-bottom: 30px;">
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #32cd32;">Open Ports:</strong> <span id="open-ports">Loading...</span>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #32cd32;">Established Connections:</strong> <span id="established-conns">0</span> |
+                <strong style="color: #32cd32;">Time-Wait:</strong> <span id="timewait-conns">0</span>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #32cd32;">Primary Interface:</strong> <span id="network-interface">eth0</span>
+            </div>
+            <div>
+                <strong style="color: #32cd32;">Total Traffic:</strong>
+                ↓ <span id="rx-traffic">0 GB</span> |
+                ↑ <span id="tx-traffic">0 GB</span>
+            </div>
+        </div>
+
+        <!-- Services Status -->
+        <div class="section-title">
+            🔧 System Services
+        </div>
+        <div id="services-container" style="background: #2a2a2a; border-radius: 8px; padding: 15px; margin-bottom: 30px;">
+            <div style="color: #888;">Loading services...</div>
+        </div>
+
+        <!-- SSL Certificates -->
+        <div class="section-title">
+            🔒 SSL Certificates
+        </div>
+        <div id="ssl-container" style="background: #2a2a2a; border-radius: 8px; padding: 15px; margin-bottom: 30px;">
+            <div style="color: #888;">Loading SSL data...</div>
+        </div>
+
+        <!-- Site Response Times -->
+        <div class="section-title">
+            ⚡ Site Response Times
+        </div>
+        <div id="response-times-container" style="background: #2a2a2a; border-radius: 8px; padding: 15px; margin-bottom: 30px;">
+            <div style="color: #888;">Loading response times...</div>
+        </div>
+
+        <!-- Storage Details -->
+        <div class="section-title">
+            💾 Storage Details
+        </div>
+        <div style="background: #2a2a2a; border-radius: 8px; padding: 15px; margin-bottom: 30px;">
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #32cd32;">Inode Usage:</strong> <span id="inode-usage">Loading...</span>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #32cd32;">/var/www Size:</strong> <span id="www-size">Loading...</span>
+            </div>
+            <div>
+                <strong style="color: #32cd32;">/var/log Size:</strong> <span id="log-size">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Security Summary -->
+        <div class="section-title">
+            🛡️ Security Summary
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">⚠️</span>
+                    <h3>Failed SSH (24h)</h3>
+                </div>
+                <div class="stat-value" id="failed-total">0</div>
+                <div class="stat-details">Total attempts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🚫</span>
+                    <h3>Banned IPs</h3>
+                </div>
+                <div class="stat-value" id="banned-count">0</div>
+                <div class="stat-details">Currently blocked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-icon">👥</span>
+                    <h3>Active Sessions</h3>
+                </div>
+                <div class="stat-value" id="active-sessions">0</div>
+                <div class="stat-details">Logged in users</div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="tech-stack">
+                <span class="tech-badge">🐧 Debian</span>
+                <span class="tech-badge">🌐 Apache</span>
+                <span class="tech-badge">🔒 SSL/TLS</span>
+                <span class="tech-badge">📊 Extended Stats</span>
+            </div>
+            <p class="footer-text">✨ Comprehensive Server Monitoring</p>
+        </footer>
+    </div>
+
+    <script>
+        async function fetchExtendedStats() {
+            try {
+                const response = await fetch('stats-extended.php');
+                const data = await response.json();
+
+                // Update Alerts
+                const alertsContainer = document.getElementById('alerts-container');
+                if (data.alerts && data.alerts.length > 0) {
+                    alertsContainer.innerHTML = data.alerts.map(alert =>
+                        `<div class="alert-box ${alert.type}">${alert.message}</div>`
+                    ).join('');
+                } else {
+                    alertsContainer.innerHTML = '<div class="alert-box ok">✓ System operating normally</div>';
+                }
+
+                // Update Apache Stats
+                if (data.apache) {
+                    document.getElementById('apache-http').textContent = data.apache.connections_http || 0;
+                    document.getElementById('apache-https').textContent = data.apache.connections_https || 0;
+                    document.getElementById('apache-procs').textContent = data.apache.processes || 0;
+                    document.getElementById('apache-requests').textContent = data.apache.requests_today || 0;
+                }
+
+                // Update Network Details
+                if (data.network) {
+                    document.getElementById('open-ports').textContent = data.network.open_ports || 'N/A';
+                    document.getElementById('established-conns').textContent = data.network.established || 0;
+                    document.getElementById('timewait-conns').textContent = data.network.time_wait || 0;
+                    document.getElementById('network-interface').textContent = data.network.interface || 'eth0';
+                    document.getElementById('rx-traffic').textContent = data.network.rx_gb + ' GB' || '0 GB';
+                    document.getElementById('tx-traffic').textContent = data.network.tx_gb + ' GB' || '0 GB';
+                }
+
+                // Update Services
+                if (data.services && data.services.services) {
+                    const servicesContainer = document.getElementById('services-container');
+                    const servicesHtml = Object.entries(data.services.services).map(([name, info]) => {
+                        const statusClass = info.active ? 'active' : 'inactive';
+                        const statusText = info.status || (info.active ? 'active' : 'inactive');
+                        return `<div class="service-row">
+                            <span class="service-name">${name}</span>
+                            <span class="service-status ${statusClass}">${statusText}</span>
+                        </div>`;
+                    }).join('');
+                    servicesContainer.innerHTML = servicesHtml;
+                }
+
+                // Update SSL Certificates
+                if (data.ssl) {
+                    const sslContainer = document.getElementById('ssl-container');
+                    const sslHtml = Object.entries(data.ssl).map(([domain, cert]) => {
+                        let statusClass = 'ok';
+                        if (cert.status === 'warning') statusClass = 'warning';
+                        if (cert.status === 'danger') statusClass = 'danger';
+
+                        const daysText = cert.days_left !== null ?
+                            `${cert.days_left} days` : 'Unknown';
+
+                        return `<div class="ssl-row">
+                            <span class="ssl-domain">${domain}</span>
+                            <span class="ssl-days ${statusClass}">${daysText}</span>
+                        </div>`;
+                    }).join('');
+                    sslContainer.innerHTML = sslHtml;
+                }
+
+                // Update Response Times
+                if (data.response_times) {
+                    const timesContainer = document.getElementById('response-times-container');
+                    const timesHtml = Object.entries(data.response_times).map(([domain, time]) =>
+                        `<div class="response-time">
+                            <span class="domain">${domain}</span>
+                            <span class="time">${time}</span>
+                        </div>`
+                    ).join('');
+                    timesContainer.innerHTML = timesHtml;
+                }
+
+                // Update Storage
+                if (data.storage) {
+                    document.getElementById('inode-usage').textContent = data.storage.inode_usage || 'N/A';
+                    document.getElementById('www-size').textContent = data.storage.www_size || 'N/A';
+                    document.getElementById('log-size').textContent = data.storage.log_size || 'N/A';
+                }
+
+                // Update Security Summary
+                if (data.security) {
+                    document.getElementById('failed-total').textContent = data.security.failed_total || 0;
+                    document.getElementById('banned-count').textContent = data.security.banned_count || 0;
+                    document.getElementById('active-sessions').textContent = data.security.active_sessions || 0;
+                }
+
+            } catch (error) {
+                console.error('Error fetching extended stats:', error);
+                const alertsContainer = document.getElementById('alerts-container');
+                alertsContainer.innerHTML = '<div class="alert-box danger">⚠️ Error loading statistics</div>';
+            }
+        }
+
+        // Initial load
+        fetchExtendedStats();
+
+        // Auto-refresh every 15 seconds
+        setInterval(fetchExtendedStats, 15000);
+    </script>
+</body>
+</html>
