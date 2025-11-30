@@ -484,7 +484,7 @@ def finish(config):
     
     # Build output message
     print(f"""
-{GREEN}{BOLD}════════════
+{GREEN}{BOLD}═════════════════════════
   Installation Complete!
 ═════════════════════════{RESET}
 
