@@ -78,9 +78,12 @@ function getNetworkDetails() {
     
     // Get interface and bandwidth - auto-detect primary interface
     $interface = trim(execCommand("ip route | grep default | awk '{print \$5}' | head -1"));
-    if (empty($interface)) $interface = 'eth0';
-    $rxBytes = execCommand("cat /sys/class/net/" . $interface . "/statistics/rx_bytes 2>/dev/null");
-    $txBytes = execCommand("cat /sys/class/net/" . $interface . "/statistics/tx_bytes 2>/dev/null");
+    if (empty($interface)) {
+        // Fallback: get first non-loopback interface
+        $interface = trim(execCommand("ls /sys/class/net/ | grep -v lo | head -1"));
+    }
+    $rxBytes = execCommand("cat /sys/class/net/" . $interface . "/statistics/rx_bytes 2>/dev/null || echo 0");
+    $txBytes = execCommand("cat /sys/class/net/" . $interface . "/statistics/tx_bytes 2>/dev/null || echo 0");
     
     return [
         'open_ports' => $openPorts,
@@ -141,10 +144,23 @@ function getServicesStatus() {
 
 // SSL certificates
 function getSSLStatus() {
-    $domains = ['glitchlinux.wtf', 'glitchlinux.com', 'glitchserver.com', 'bonsailinux.com'];
+    // Auto-detect domains from Apache virtual hosts
+    $domains = [];
+
+    // Try to get ServerName from Apache config
+    $apacheConf = execCommand("grep -r 'ServerName' /etc/apache2/sites-enabled/ /etc/httpd/conf.d/ 2>/dev/null | grep -v '#' | awk '{print $2}' | sort -u");
+    if ($apacheConf) {
+        $domains = array_filter(explode("\n", $apacheConf));
+    }
+
+    // Limit to 5 domains to avoid long processing time
+    $domains = array_slice($domains, 0, 5);
+
     $certs = [];
-    
+
     foreach ($domains as $domain) {
+        if (empty($domain) || $domain === 'localhost') continue;
+
         $expiry = execCommand("echo | openssl s_client -servername $domain -connect $domain:443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2");
         if ($expiry) {
             $expiryTime = strtotime($expiry);
@@ -155,28 +171,40 @@ function getSSLStatus() {
                 'status' => $daysLeft > 30 ? 'ok' : ($daysLeft > 7 ? 'warning' : 'danger')
             ];
         } else {
-            $certs[$domain] = ['expiry' => 'Unknown', 'days_left' => null, 'status' => 'unknown'];
+            $certs[$domain] = ['expiry' => 'N/A', 'days_left' => null, 'status' => 'unknown'];
         }
     }
-    
+
     return $certs;
 }
 
 // Site response times
 function getSiteResponseTimes() {
-    $sites = [
-        'glitchlinux.wtf' => 'https://glitchlinux.wtf',
-        'glitchlinux.com' => 'https://glitchlinux.com',
-        'glitchserver.com' => 'https://glitchserver.com',
-        'bonsailinux.com' => 'https://bonsailinux.com'
-    ];
-    $times = [];
-    
-    foreach ($sites as $name => $url) {
-        $time = execCommand("curl -o /dev/null -s -w '%{time_total}' --max-time 5 $url");
-        $times[$name] = $time ? round((float)$time * 1000) . 'ms' : 'timeout';
+    // Auto-detect domains from Apache virtual hosts
+    $domains = [];
+
+    // Try to get ServerName from Apache config
+    $apacheConf = execCommand("grep -r 'ServerName' /etc/apache2/sites-enabled/ /etc/httpd/conf.d/ 2>/dev/null | grep -v '#' | awk '{print $2}' | sort -u");
+    if ($apacheConf) {
+        $domains = array_filter(explode("\n", $apacheConf));
     }
-    
+
+    // Limit to 5 domains to avoid long processing time
+    $domains = array_slice($domains, 0, 5);
+
+    $times = [];
+
+    foreach ($domains as $domain) {
+        if (empty($domain) || $domain === 'localhost') continue;
+
+        // Try HTTPS first, fallback to HTTP
+        $time = execCommand("curl -o /dev/null -s -w '%{time_total}' --max-time 3 https://$domain 2>/dev/null");
+        if (!$time) {
+            $time = execCommand("curl -o /dev/null -s -w '%{time_total}' --max-time 3 http://$domain 2>/dev/null");
+        }
+        $times[$domain] = $time ? round((float)$time * 1000) . 'ms' : 'timeout';
+    }
+
     return $times;
 }
 
