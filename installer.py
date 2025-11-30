@@ -466,7 +466,7 @@ Listen 127.0.0.1:{port}
         with open(vhost_file, 'w') as f:
             f.write(vhost)
         run_cmd("a2ensite monitor.conf 2>/dev/null", silent=True)
-        run_cmd("systemctl reload apache2")
+        run_cmd("systemctl restart apache2")
     else:
         # RHEL/httpd/Arch
         vhost = vhost.replace('/var/log/apache2/', '/var/log/httpd/')
@@ -488,7 +488,7 @@ Listen 127.0.0.1:{port}
         vhost_file = "/etc/httpd/conf.d/monitor.conf"
         with open(vhost_file, 'w') as f:
             f.write(vhost)
-        run_cmd("systemctl reload httpd")
+        run_cmd("systemctl restart httpd")
     
     print(f"  {GREEN}✓{RESET} Apache configured on localhost:{port}")
 
