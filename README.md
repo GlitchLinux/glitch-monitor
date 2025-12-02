@@ -1,4 +1,4 @@
-# 🖥️ gLiTcH-Monitor
+# 🖥️ Monitor
 
 A lightweight, modern server monitoring dashboard for Linux systems. Built with pure HTML, CSS, and PHP — no frameworks, no bloat, no bullshit.
 
@@ -27,8 +27,8 @@ A lightweight, modern server monitoring dashboard for Linux systems. Built with 
 ## Quick Install
 
 ```bash
-git clone https://github.com/glitchlinux/glitch-monitor.git
-cd glitch-monitor
+git clone https://github.com/glitchlinux/monitor.git
+cd monitor
 sudo python3 installer.py
 ```
 
@@ -70,7 +70,7 @@ By default binds to **localhost:8443 only**. For remote access:
 | Cockpit | ~100MB | 200MB+ | Heavy |
 | Webmin | ~80MB | 150MB+ | Dated |
 | Netdata | ~150MB | 300MB+ | Overkill |
-| **gLiTcH-Monitor** | **~5MB** | **<100KB** | **Modern** |
+| **Monitor** | **~5MB** | **<100KB** | **Modern** |
 
 ## License
 
